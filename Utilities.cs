@@ -97,10 +97,10 @@ namespace PrecisionNode
                 //preparation for Brep-Brep intersection
                 Curve[] intersectionCurves;
                 Point3d[] intersectionPoints;
-                if (Rhino.Geometry.Intersect.Intersection.BrepBrep(branchCylinder, 
-                        joinedCylinders, 
-                        RhinoDoc.ActiveDoc.ModelAbsoluteTolerance, 
-                        out intersectionCurves, 
+                if (Rhino.Geometry.Intersect.Intersection.BrepBrep(branchCylinder,
+                        joinedCylinders,
+                        RhinoDoc.ActiveDoc.ModelAbsoluteTolerance,
+                        out intersectionCurves,
                         out intersectionPoints))
                 {
                     intersection = intersectionCurves[0];

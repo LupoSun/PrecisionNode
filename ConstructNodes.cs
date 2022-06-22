@@ -27,7 +27,7 @@ namespace PrecisionNode
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
-        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
             pManager.AddCurveParameter("BranchCurves",
                 "BCrv",
@@ -42,7 +42,7 @@ namespace PrecisionNode
         /// <summary>
         /// Registers all the output parameters for this component.
         /// </summary>
-        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("Nodes", "N", "The constructed nodes", GH_ParamAccess.list);
         }
@@ -59,7 +59,7 @@ namespace PrecisionNode
             GH_Structure<GH_Number> pipeRadius;
 
             bool success1 = DA.GetDataTree(0, out pipeLines);
-            bool success2 = DA.GetDataTree(0, out pipeRadius);
+            bool success2 = DA.GetDataTree(1, out pipeRadius);
 
             if (success1 && success2)
             {
@@ -87,7 +87,7 @@ namespace PrecisionNode
                     Point3d centrePoint = Utilities.PipeLinesSort(branchPipeLines, out branchstartPoints);
 
                     //Initialize all the NodeBranch objects and put them into a Node object
-                    Node node = new Node();
+                    Node node = new Node(i);
 
                     //First loop finds all the intersection curves and examine if the intersection is closed,
                     Dictionary<Point3d, Curve> intersectionDic = new Dictionary<Point3d, Curve>();
@@ -145,8 +145,6 @@ namespace PrecisionNode
                     }
 
                     nodes.Add(node);
-                    //node.CreateNodeSimpleSubD();
-                    //nodeSubDs.Add(node.NodeSimpleSubD);
 
                 }
 

@@ -9,7 +9,7 @@ namespace PrecisionNode
     public class NodeBranch
     {
         private Curve centreLine;
-        private Point3d centrePoint;
+        private readonly Point3d centrePoint;
         private Point3d branchStartPoint;
         private Curve cylinderIntersection;
         private double radius;
@@ -19,10 +19,12 @@ namespace PrecisionNode
         private readonly int branchNum;
         private readonly Plane branchStartPlane;
 
-        public Plane BranchStartPlane => branchStartPlane;
-        public Point3d BranchStartPoint => branchStartPoint;
-        public SubD BranchSimpleSubD => branchSimpleSubD;
-        public Brep BranchLoft => branchLoft;
+        public Plane BranchStartPlane { get { return branchStartPlane; } }
+        public Point3d BranchStartPoint { get { return branchStartPoint; } }
+        public Point3d CentrePoint { get { return centrePoint; } }
+        public double Radius { get { return radius; } }
+        public SubD BranchSimpleSubD { get { return branchSimpleSubD; } }
+        public Brep BranchLoft { get { return branchLoft; } }
 
         /// <summary>
         /// Automatically add more intersectionCorners to the internal list
@@ -30,20 +32,20 @@ namespace PrecisionNode
         /// <param name="cornerToAdd"></param>
         public void AddIntersectionCorners(Point3d cornerToAdd)
         {
-            this.intersectionCorners.Add(cornerToAdd);
-            this.intersectionCorners = PlaneRadialPointSort(this.intersectionCorners, this.branchStartPlane);
+            intersectionCorners.Add(cornerToAdd);
+            intersectionCorners = PlaneRadialPointSort(intersectionCorners, branchStartPlane);
         }
         /// <summary>
         /// Create the SubD and Loft Geometry and store them in the NodeBranch object
         /// </summary>
         public void CreateSimpleSubD()
         {
-            LoftBranch(this.intersectionCorners, this.radius, this.branchStartPlane, out this.branchLoft, out this.branchSimpleSubD);
+            LoftBranch(intersectionCorners, radius, branchStartPlane, out branchLoft, out branchSimpleSubD);
         }
         public NodeBranch(Point3d startPoint, Point3d centrePoint, Curve cylinderIntersection, double radius, int branchNum)
         {
             //setting up the basic attributes
-            this.branchStartPoint = startPoint;
+            branchStartPoint = startPoint;
             this.centrePoint = centrePoint;
             this.cylinderIntersection = cylinderIntersection;
             this.radius = radius;
@@ -51,13 +53,13 @@ namespace PrecisionNode
 
             //compute the indirect attributes
             //get the centre line of the branch
-            this.centreLine = new LineCurve(startPoint, centrePoint);
+            centreLine = new LineCurve(startPoint, centrePoint);
             //compute the plane on the outter reach perpendicular to the centre line
-            this.branchStartPlane = new Plane(branchStartPoint, (centrePoint - branchStartPoint));
+            branchStartPlane = new Plane(branchStartPoint, centrePoint - branchStartPoint);
             //get the rebuilt intersection corners
-            this.intersectionCorners = GetIntersectionCorners(cylinderIntersection, this.branchStartPlane);
+            intersectionCorners = GetIntersectionCorners(cylinderIntersection, branchStartPlane);
             //sort the corners radially
-            this.intersectionCorners = PlaneRadialPointSort(this.intersectionCorners, this.branchStartPlane);
+            intersectionCorners = PlaneRadialPointSort(intersectionCorners, branchStartPlane);
             //create Brep and SubD through loft
             //LoftBranch(this.intersectionCorners, radius, branchStartPlane, out branchLoft, out branchSubD);
 

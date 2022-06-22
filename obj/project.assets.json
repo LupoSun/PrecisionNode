@@ -1,0 +1,129 @@
+{
+  "version": 3,
+  "targets": {
+    ".NETFramework,Version=v4.8": {
+      "Grasshopper/7.17.22102.5001": {
+        "type": "package",
+        "dependencies": {
+          "RhinoCommon": "[7.17.22102.5001]"
+        },
+        "compile": {
+          "lib/net48/GH_IO.dll": {},
+          "lib/net48/Grasshopper.dll": {}
+        },
+        "runtime": {
+          "lib/net48/_._": {}
+        },
+        "build": {
+          "build/Grasshopper.targets": {}
+        }
+      },
+      "RhinoCommon/7.17.22102.5001": {
+        "type": "package",
+        "compile": {
+          "lib/net48/Eto.dll": {},
+          "lib/net48/Rhino.UI.dll": {},
+          "lib/net48/RhinoCommon.dll": {}
+        },
+        "runtime": {
+          "lib/net48/_._": {}
+        },
+        "build": {
+          "build/RhinoCommon.targets": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Grasshopper/7.17.22102.5001": {
+      "sha512": "05kkIXJapZ1joLZgs24QvPUnctmEjSR3/ML5oDRp/3dxF97M/nhyuabavU5o3irKWk4yN1fDko+uBMWaZl7naQ==",
+      "type": "package",
+      "path": "grasshopper/7.17.22102.5001",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "build/Grasshopper.targets",
+        "grasshopper.7.17.22102.5001.nupkg.sha512",
+        "grasshopper.nuspec",
+        "grasshopper.png",
+        "lib/net48/GH_IO.XML",
+        "lib/net48/GH_IO.dll",
+        "lib/net48/Grasshopper.dll",
+        "lib/net48/Grasshopper.xml"
+      ]
+    },
+    "RhinoCommon/7.17.22102.5001": {
+      "sha512": "eaD9lY297I99QvB9yo0xerjglclRIahVY1nFLAszUzvF2rBN80v04lk4edKkKNjm8aOnWMN/DWZdd0P6MVBNNg==",
+      "type": "package",
+      "path": "rhinocommon/7.17.22102.5001",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Eto-LICENSE.txt",
+        "build/RhinoCommon.targets",
+        "lib/net48/Eto.dll",
+        "lib/net48/Eto.xml",
+        "lib/net48/Rhino.UI.dll",
+        "lib/net48/RhinoCommon.XML",
+        "lib/net48/RhinoCommon.dll",
+        "rhinocommon.7.17.22102.5001.nupkg.sha512",
+        "rhinocommon.nuspec",
+        "rhinocommon.png"
+      ]
+    }
+  },
+  "projectFileDependencyGroups": {
+    ".NETFramework,Version=v4.8": [
+      "Grasshopper >= 7.17.22102.5001"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\TAO\\.nuget\\packages\\": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "C:\\Users\\TAO\\OneDrive\\PrecisionNode\\PrecisionNode\\PrecisionNode.csproj",
+      "projectName": "PrecisionNode",
+      "projectPath": "C:\\Users\\TAO\\OneDrive\\PrecisionNode\\PrecisionNode\\PrecisionNode.csproj",
+      "packagesPath": "C:\\Users\\TAO\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\TAO\\OneDrive\\PrecisionNode\\PrecisionNode\\obj\\",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "C:\\Users\\TAO\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "net48"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net48": {
+          "targetAlias": "net48",
+          "projectReferences": {}
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      }
+    },
+    "frameworks": {
+      "net48": {
+        "targetAlias": "net48",
+        "dependencies": {
+          "Grasshopper": {
+            "include": "Compile, Build",
+            "target": "Package",
+            "version": "[7.17.22102.5001, )"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.301\\RuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}

@@ -7,3 +7,5 @@ C:\Users\TAO\OneDrive\PrecisionNode\PrecisionNode\obj\Debug\net48\PrecisionNode.
 C:\Users\TAO\OneDrive\PrecisionNode\PrecisionNode\obj\Debug\net48\PrecisionNode.csproj.CoreCompileInputs.cache
 C:\Users\TAO\OneDrive\PrecisionNode\PrecisionNode\obj\Debug\net48\PrecisionNode.gha
 C:\Users\TAO\OneDrive\PrecisionNode\PrecisionNode\obj\Debug\net48\PrecisionNode.pdb
+C:\Users\TAO\OneDrive\PrecisionNode\PrecisionNode\obj\Debug\net48\PrecisionNode.Properties.Resources.resources
+C:\Users\TAO\OneDrive\PrecisionNode\PrecisionNode\obj\Debug\net48\PrecisionNode.csproj.GenerateResource.cache

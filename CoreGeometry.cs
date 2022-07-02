@@ -12,9 +12,9 @@ namespace PrecisionNode
         /// Initializes a new instance of the MyComponent1 class.
         /// </summary>
         public CoreGeometry()
-          : base("CoreGeometry", "CG",
+          : base("Core Geometry", "CG",
               "Construct the core geometry of the nodes as solid Brep",
-              "PrecisionNode", "NodeSmith")
+              "PrecisionNode", "Node Smith")
         {
         }
 
@@ -61,7 +61,8 @@ namespace PrecisionNode
             {
                 foreach (Node node in nodes)
                 {
-                    node.CreateNodeSimpleSubD();
+                    if (node.NodeSimpleSubD == null) node.CreateNodeSimpleSubD();
+
                     node.CreateCoreGeometry(wallThickness, threadWallThickness, threadLength);
                     coreGeometries.Add(node.CoreGeometry);
                 }

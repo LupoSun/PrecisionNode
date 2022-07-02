@@ -10,13 +10,24 @@ namespace PrecisionNode
     {
         private List<NodeBranch> nodeBranches;
         private SubD nodeSimpleSubD;
+        private SubD sprayBaseSubD;
         private int nodeNum;
         private Brep coreGeometry;
+        private double coreWallThickness;
+        private double coreThreadWallThickness;
         private Brep coatingGeometry;
+        private List<Curve> sprayPath;
+        
+
 
         public List<NodeBranch> NodeBranches { get { return nodeBranches; } }
         public SubD NodeSimpleSubD { get { return nodeSimpleSubD; } }
         public Brep CoreGeometry { get { return coreGeometry; } }
+        public SubD SprayBaseSubD { get { return sprayBaseSubD; } }
+        public List<Curve> SprayPath { 
+            get { return sprayPath; }
+            set { sprayPath = value; }
+        }
 
         /// <summary>
         /// Constructor for a empty Node object
@@ -25,9 +36,13 @@ namespace PrecisionNode
         {
             nodeBranches = new List<NodeBranch>();
             nodeSimpleSubD = null;
+            sprayBaseSubD = null;
             coreGeometry = null;
+            coreWallThickness = double.NaN;
+            coreThreadWallThickness = double.NaN;
             coatingGeometry = null;
             this.nodeNum = nodeNum;
+            sprayPath = new List<Curve>();
         }
         /// <summary>
         /// 
@@ -38,9 +53,13 @@ namespace PrecisionNode
         {
             this.nodeBranches = nodeBranches;
             nodeSimpleSubD = null;
+            sprayBaseSubD=null;
             coreGeometry = null;
+            coreWallThickness = double.NaN;
+            coreThreadWallThickness = double.NaN;
             coatingGeometry = null;
-            this.nodeNum = nodeNum; 
+            this.nodeNum = nodeNum;
+            sprayPath = new List<Curve>();
         }
 
         /// <summary>
@@ -60,8 +79,14 @@ namespace PrecisionNode
 
         public void CreateCoreGeometry(double wallThickness, double threadWallThickness, double threadLength)
         {
+            //store information into the Node
+            coreWallThickness = wallThickness;
+            coreThreadWallThickness = threadWallThickness;
+
             //Offset the node's simple SubD and cap all the holes into a solid Brep
             SubD outerShell = this.nodeSimpleSubD.Offset(threadWallThickness, false);
+            //Assign the outerShell as the base SubD surface for spraying
+            this.sprayBaseSubD = outerShell;
             Brep solid = outerShell.ToBrep(SubDToBrepOptions.DefaultPacked);
             solid = solid.CapPlanarHoles(Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance * 10); //double the tolerance to make sure the capping succeed
 

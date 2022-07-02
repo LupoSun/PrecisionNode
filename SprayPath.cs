@@ -3,18 +3,19 @@ using System.Collections.Generic;
 
 using Grasshopper.Kernel;
 using Rhino.Geometry;
+using static PrecisionNode.Utilities;
 
 namespace PrecisionNode
 {
-    public class SimpleSurface : GH_Component
+    public class SprayPath : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the MyComponent1 class.
         /// </summary>
-        public SimpleSurface()
-          : base("Simple Surface", "SS",
-              "Construct the simple surface representation of the nodes as SubD and Brep",
-              "PrecisionNode", "Node Smith")
+        public SprayPath()
+          : base("Spray Path", "SP",
+              "Compute the spray path of a node",
+              "PrecisionNode", "Node Designer")
         {
         }
 
@@ -23,8 +24,11 @@ namespace PrecisionNode
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Nodes", "N", "The constructed Node objects", GH_ParamAccess.list);
-            pManager.AddBooleanParameter("Packed Brep", "Packed", "If the Brep output is packed", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Nodes", "N", "The nodes to compute spray pattern for", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Division Angle",
+                "DA",
+                "The angle between each path using a plane perpendicular to the branch centre line as reference",
+                GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -32,9 +36,7 @@ namespace PrecisionNode
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddSubDParameter("SubD", "SubD", "SubD Surface", GH_ParamAccess.list);
-            pManager.AddBrepParameter("Brep", "Brep", "Brep Surface", GH_ParamAccess.list);
-
+            pManager.AddCurveParameter("Spray Path", "SP", "The spray path for the nodes", GH_ParamAccess.tree);
         }
 
         /// <summary>
@@ -44,30 +46,9 @@ namespace PrecisionNode
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             List<Node> nodes = new List<Node>();
-            bool packed = true;
-            bool success1 = DA.GetDataList(0, nodes);
-            bool success2 = DA.GetData(1, ref packed);
-
-            List<SubD> subDs = new List<SubD>();
-            List<Brep> Breps = new List<Brep>();
-
-            foreach(Node node in nodes)
-            {
-                if (node.NodeSimpleSubD == null)
-                {
-                    node.CreateNodeSimpleSubD();
-                }
-
-                SubD subD = node.NodeSimpleSubD;
-                subDs.Add(subD);
-
-                if (packed) Breps.Add(subD.ToBrep(SubDToBrepOptions.DefaultPacked));
-                else Breps.Add(subD.ToBrep(SubDToBrepOptions.Default));
-            }
-
-            DA.SetDataList(0, subDs);
-            DA.SetDataList(1, Breps);
-
+            double divisionAngle = double.NaN;
+            DA.GetData(0, ref nodes);
+            DA.GetData(1, ref divisionAngle);
 
 
         }
@@ -81,7 +62,7 @@ namespace PrecisionNode
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return Properties.Resources.SimpleSurface;
+                return null;
             }
         }
 
@@ -90,7 +71,7 @@ namespace PrecisionNode
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("ED27EA99-9B7B-4040-8857-F68CF064CD48"); }
+            get { return new Guid("18638C1D-27E5-421A-8949-3D7AC741417A"); }
         }
     }
 }

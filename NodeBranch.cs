@@ -3,6 +3,7 @@ using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static PrecisionNode.Utilities;
 
 namespace PrecisionNode
 {
@@ -26,13 +27,17 @@ namespace PrecisionNode
         public SubD BranchSimpleSubD { get { return branchSimpleSubD; } }
         public Brep BranchLoft { get { return branchLoft; } }
 
+        public Curve CylinderIntersection { get { return cylinderIntersection; } }
+
         /// <summary>
         /// Automatically add more intersectionCorners to the internal list
         /// </summary>
         /// <param name="cornerToAdd"></param>
         public void AddIntersectionCorners(Point3d cornerToAdd)
         {
-            intersectionCorners.Add(cornerToAdd);
+            List<Point3d> cornersToAdd = new List<Point3d>{cornerToAdd};
+            intersectionCorners = GetIntersectionCorners(cylinderIntersection, branchStartPlane,40, cornersToAdd);
+            //intersectionCorners.Add(cornerToAdd);
             intersectionCorners = PlaneRadialPointSort(intersectionCorners, branchStartPlane);
         }
         /// <summary>
@@ -40,6 +45,13 @@ namespace PrecisionNode
         /// </summary>
         public void CreateSimpleSubD()
         {
+            if (intersectionCorners == null)
+            {
+                //get the rebuilt intersection c orners
+                intersectionCorners = GetIntersectionCorners(cylinderIntersection, branchStartPlane);
+            }
+            //sort the corners radially
+            intersectionCorners = PlaneRadialPointSort(intersectionCorners, branchStartPlane);
             LoftBranch(intersectionCorners, radius, branchStartPlane, out branchLoft, out branchSimpleSubD);
         }
         public NodeBranch(Point3d startPoint, Point3d centrePoint, Curve cylinderIntersection, double radius, int branchNum)
@@ -56,17 +68,13 @@ namespace PrecisionNode
             centreLine = new LineCurve(startPoint, centrePoint);
             //compute the plane on the outter reach perpendicular to the centre line
             branchStartPlane = new Plane(branchStartPoint, centrePoint - branchStartPoint);
-            //get the rebuilt intersection corners
-            intersectionCorners = GetIntersectionCorners(cylinderIntersection, branchStartPlane);
-            //sort the corners radially
-            intersectionCorners = PlaneRadialPointSort(intersectionCorners, branchStartPlane);
-            //create Brep and SubD through loft
-            //LoftBranch(this.intersectionCorners, radius, branchStartPlane, out branchLoft, out branchSubD);
+            
 
 
 
 
         }
+        /*
         /// <summary>
         /// By having the PolyCurve of the cylinder intersection, this function rebuilds the curve into
         /// PolyLineCurves and retrieve the corner points
@@ -126,6 +134,7 @@ namespace PrecisionNode
             return pointDupRemoved.ToList();
         }
 
+        
 
         /// <summary>
         /// Sort the corners radially base on the branchStartPlane
@@ -157,6 +166,7 @@ namespace PrecisionNode
             Array.Sort(angles, toSortArray);
             return toSortArray.ToList();
         }
+        
 
         /// <summary>
         /// Construct both Brep and SubD Geometry of a Branch
@@ -227,5 +237,6 @@ namespace PrecisionNode
 
             subD = unjoined[0];
         }
+        */
     }
 }

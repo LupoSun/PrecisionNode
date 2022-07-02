@@ -9,7 +9,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Grasshopper" Version="7.17.22102.5001" IncludeAssets="compile;build" />
+    <PackageReference Include="Grasshopper" Version="7.19.22180.9001" IncludeAssets="compile;build" />
   </ItemGroup>
   
   <ItemGroup>

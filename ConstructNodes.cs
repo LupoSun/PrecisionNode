@@ -18,9 +18,9 @@ namespace PrecisionNode
         /// new tabs/panels will automatically be created.
         /// </summary>
         public ConstructNodes()
-          : base("Construct Nodes", "Nickname",
-            "Create nodes ",
-            "PrecisionNode", "Build")
+          : base("Design Nodes", "Nickname",
+            "Create nodes information object",
+            "PrecisionNode", "Node Designer")
         {
         }
 

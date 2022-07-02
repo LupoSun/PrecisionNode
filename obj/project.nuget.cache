@@ -1,11 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "dvpBmIQnbH/HJSRpPQD9mUMv3NXxUcqk3u1059F4OhBbsVEyJXqZ0VYoDdEfJE+RP++s+fWg67D11SMpmJE6pw==",
+  "dgSpecHash": "X1yjLN/6UvqXpeg0cD0HEoih+TohtkGRzc/nDseaMCWDdKqPDW4LweHzyzV17m/GK2guO9jvjiiRm6pezQkgkg==",
   "success": true,
   "projectFilePath": "C:\\Users\\TAO\\OneDrive\\PrecisionNode\\PrecisionNode\\PrecisionNode.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\TAO\\.nuget\\packages\\grasshopper\\7.17.22102.5001\\grasshopper.7.17.22102.5001.nupkg.sha512",
-    "C:\\Users\\TAO\\.nuget\\packages\\rhinocommon\\7.17.22102.5001\\rhinocommon.7.17.22102.5001.nupkg.sha512"
+    "C:\\Users\\TAO\\.nuget\\packages\\grasshopper\\7.19.22180.9001\\grasshopper.7.19.22180.9001.nupkg.sha512",
+    "C:\\Users\\TAO\\.nuget\\packages\\rhinocommon\\7.19.22180.9001\\rhinocommon.7.19.22180.9001.nupkg.sha512"
   ],
   "logs": []
 }

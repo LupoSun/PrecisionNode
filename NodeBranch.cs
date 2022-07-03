@@ -37,7 +37,6 @@ namespace PrecisionNode
         {
             List<Point3d> cornersToAdd = new List<Point3d>{cornerToAdd};
             intersectionCorners = GetIntersectionCorners(cylinderIntersection, branchStartPlane,40, cornersToAdd);
-            //intersectionCorners.Add(cornerToAdd);
             intersectionCorners = PlaneRadialPointSort(intersectionCorners, branchStartPlane);
         }
         /// <summary>
@@ -69,10 +68,6 @@ namespace PrecisionNode
             //compute the plane on the outter reach perpendicular to the centre line
             branchStartPlane = new Plane(branchStartPoint, centrePoint - branchStartPoint);
             
-
-
-
-
         }
         /*
         /// <summary>

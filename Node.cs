@@ -28,6 +28,7 @@ namespace PrecisionNode
             get { return sprayPath; }
             set { sprayPath = value; }
         }
+        public double CoreThreadWallThickness { get { return coreThreadWallThickness; } }
 
         /// <summary>
         /// Constructor for a empty Node object
@@ -53,7 +54,7 @@ namespace PrecisionNode
         {
             this.nodeBranches = nodeBranches;
             nodeSimpleSubD = null;
-            sprayBaseSubD=null;
+            sprayBaseSubD = null;
             coreGeometry = null;
             coreWallThickness = double.NaN;
             coreThreadWallThickness = double.NaN;

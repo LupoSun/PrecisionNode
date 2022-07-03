@@ -10,6 +10,8 @@ namespace PrecisionNode
 {
     public class Utilities
     {
+        public Utilities() { }
+
         /// <summary>
         /// Find the centre point and the further reach points from a list of pipe lines
         /// </summary>
@@ -113,10 +115,12 @@ namespace PrecisionNode
 
         /// <summary>
         /// By having the PolyCurve of the cylinder intersection, this function rebuilds the curve into
-        /// PolyLineCurves and retrieve the corner points
+        /// PolyLineCurves according the the division ANGLE and retrieve the corner points
         /// </summary>
         /// <param name="cylinderIntersection"></param>
         /// <param name="basePlane"></param>
+        /// <param name="divisionAngle"></param>
+        /// <param name="averagePosition"></param>
         /// <returns></returns>
         public static List<Point3d> GetIntersectionCorners(Curve cylinderIntersection, Plane basePlane, double divisionAngle = 40, List<Point3d> averagePosition = null)
         {
@@ -180,6 +184,73 @@ namespace PrecisionNode
             return pointDupRemoved.ToList();
         }
 
+        /// <summary>
+        /// By having the PolyCurve of the cylinder intersection, this function rebuilds the curve into
+        /// PolyLineCurves according the the division LENGTH and retrieve the corner points
+        /// </summary>
+        /// <param name="cylinderIntersection"></param>
+        /// <param name="basePlane"></param>
+        /// <param name="averagePosition"></param>
+        /// <param name="divisionLength"></param>
+        /// <returns></returns>
+        public static List<Point3d> GetIntersectionCorners(Curve cylinderIntersection, double divisionLength, Plane basePlane, List<Point3d> averagePosition = null)
+        {
+            List<Curve> segments = new List<Curve>();
+            Curve[] curveSegments;
+            if (cylinderIntersection is PolyCurve)
+            {
+                //check if the intersection is a PolyCurve 
+                curveSegments = ((PolyCurve)cylinderIntersection).Explode();
+            }
+            else { curveSegments = new Curve[] { cylinderIntersection }; }
+            segments.AddRange(curveSegments);
+
+            if ((averagePosition != null) && (!cylinderIntersection.IsClosed))
+            {
+                segments.Add(new LineCurve(cylinderIntersection.PointAtEnd, averagePosition[0]));
+                segments.Add(new LineCurve(averagePosition[0], cylinderIntersection.PointAtStart));
+
+            }
+
+
+            List<NurbsCurve> rebuiltSegments = new List<NurbsCurve>();
+            List<Point3d> intersectionCorners = new List<Point3d>();
+
+            Transform projection = Transform.PlanarProjection(basePlane);
+
+            foreach (Curve curve in segments)
+            {
+                //measure the length of the segment
+                double length = curve.GetLength();
+                int segmentNum = (int)(length / divisionLength);
+                //to have a minimum segmentNum for rebuilding
+                if (segmentNum == 0) segmentNum++;
+                //rebuild the Curve acccording to the determined segment number
+                NurbsCurve rebuilt = curve.Rebuild(segmentNum + 1, 1, false);
+                if (rebuilt != null) rebuiltSegments.Add(rebuilt);
+            }
+
+            //add all the end points of the segments into the list as a failsafe for the next step
+            foreach (Curve curve in rebuiltSegments)
+            {
+                intersectionCorners.Add(curve.PointAtEnd);
+                intersectionCorners.Add(curve.PointAtStart);
+            }
+
+            //get the joined PolyLine after rebuilding
+            PolylineCurve joinedRebuilt = (PolylineCurve)Curve.JoinCurves(rebuiltSegments)[0];
+
+            //find all the corners
+            for (int i = 0; i < joinedRebuilt.PointCount - 1; i++)
+            {
+                intersectionCorners.Add(joinedRebuilt.Point(i));
+            }
+
+            //clean up and remove all the duplicate points
+            Point3d[] pointDupRemoved = Point3d.CullDuplicates(intersectionCorners, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
+
+            return pointDupRemoved.ToList();
+        }
         /// <summary>
         /// Sort the corners radially base on the branchStartPlane
         /// </summary>

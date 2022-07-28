@@ -27,9 +27,7 @@ namespace PrecisionNode
         public int NodeNum { get { return nodeNum; } set { nodeNum = value; }}
         public double CoreThreadWallThickness { get { return coreThreadWallThickness; } set { coreThreadWallThickness = value; } }
         public double CoreWallThickness { get { return coreWallThickness; } set { coreWallThickness = value; } }
-        public List<Curve> SprayPath { 
-            get { return sprayPath; }
-            set { sprayPath = value; }
+        public List<Curve> SprayPath { get { return sprayPath; } set { sprayPath = value; }
         }
         
 
@@ -123,7 +121,11 @@ namespace PrecisionNode
                 Brep[] resultBrep = innerShellBrep.Trim(splittingBrep, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
                 innerShellBrep = resultBrep[0];
 
-                cylindersBreps.Add(new Cylinder(new Circle(splittingPlanes[i], nodeBranches[i].Radius), -(threadLength)).ToBrep(true, true));
+                //The length of the cylinder is 1.25 * threadLength and move the cylinder 0.125 of the threadLength outwards
+                Brep cylinderBrep = new Cylinder(new Circle(splittingPlanes[i], nodeBranches[i].Radius), -(threadLength + threadLength / 4)).ToBrep(true, true);
+                Transform moveCylinder = Transform.Translation(-(moveVector / 8));
+                cylinderBrep.Transform(moveCylinder);
+                cylindersBreps.Add(cylinderBrep);
 
             }
 

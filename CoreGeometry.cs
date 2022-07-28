@@ -62,8 +62,6 @@ namespace PrecisionNode
                 foreach (Node node in nodes)
                 {
                     if (node.NodeSimpleSubD == null) node.CreateNodeSimpleSubD();
-                    node.CoreWallThickness = wallThickness;
-                    node.CoreThreadWallThickness = threadWallThickness;
                     node.CreateCoreGeometry(wallThickness, threadWallThickness, threadLength);
                     coreGeometries.Add(node.CoreGeometry);
                 }

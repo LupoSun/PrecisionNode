@@ -28,7 +28,7 @@ namespace PrecisionNode
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Nodes", "N", "The nodes to compute spray pattern for", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Nodes", "N", "The nodes to compute spray pattern for", GH_ParamAccess.list);
             pManager.AddNumberParameter("Division Length",
                 "DA",
                 "The distance between paths at the ends of each NodeBranch",
@@ -45,8 +45,8 @@ namespace PrecisionNode
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Processed Node", "PN", "The Node objects after being processed", GH_ParamAccess.item);
-            pManager.AddCurveParameter("Spray Path", "SP", "The spray path for the nodes", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Processed Node", "PN", "The Node objects after being processed", GH_ParamAccess.list);
+            pManager.AddCurveParameter("Spray Path", "SP", "The spray path for the nodes", GH_ParamAccess.tree);
         }
 
         /// <summary>
@@ -55,32 +55,41 @@ namespace PrecisionNode
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            Node node = null;
+            List<Node> nodes = new List<Node>();
             double divisionLength = double.NaN;
             int pathadhesiveness = 0;
             int mode = 1;
-            DA.GetData(0, ref node);
+            DA.GetDataList(0, nodes);
             DA.GetData(1, ref divisionLength);
             DA.GetData(2, ref pathadhesiveness);
             DA.GetData(3, ref mode);
 
-            List<Curve> sp = new List<Curve>();
+            GH_Structure<GH_Curve> sprayPathTree = new GH_Structure<GH_Curve>();
             List<Node> processedNodes = new List<Node>();
 
-
-            if (node.CoreGeometry == null) AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "This node doesn't have a core geometry yet");
-            else
+            int branchIndex = 0;
+            foreach(Node node in nodes)
             {
-                //compute and store the sprayPath into the Node objects
-                List<Curve> sprayPath = ComputeSprayPath(node, divisionLength, pathadhesiveness, mode);
-                node.SprayPath = sprayPath;
-                processedNodes.Add(node);
-                sp = sprayPath;
+                if (node.CoreGeometry == null) AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, "This node doesn't have a core geometry yet");
+                else
+                {
+                    //compute and store the sprayPath into the Node objects
+                    List<Curve> sprayPath = ComputeSprayPath(node, divisionLength, pathadhesiveness, mode);
+                    node.SprayPath = sprayPath;
+                    processedNodes.Add(node);
 
+                    //put the sprayPath into a data tree as Curves
+                    GH_Path branchPath = new GH_Path(branchIndex);
+                    foreach (Curve curve in sprayPath)
+                    {
+                        GH_Curve gHCurve = new GH_Curve(curve);
+                        sprayPathTree.Append(gHCurve, branchPath);
+                    }
+                }
             }
 
-            DA.SetData(0, processedNodes);
-            DA.SetDataList(1, sp);
+            DA.SetDataList(0, processedNodes);
+            DA.SetDataTree(1, sprayPathTree);
 
             
 
@@ -100,7 +109,7 @@ namespace PrecisionNode
         public static List<Curve> ComputeSprayPath(Node node, double divisionLength, int pathAdhesiveness, int mode)
         {
             List<Curve> paths = new List<Curve>();
-            SubD SprayBaseSubD = node.CoatingBaseSubD;
+            SubD SprayBaseSubD = node.SprayBaseSubD;
 
             //First loop finds all the intersection curves and examine if the intersection is closed,
             List<Point3d> loseEnds = new List<Point3d>();
@@ -175,7 +184,7 @@ namespace PrecisionNode
             }
 
 
-            Mesh spraySmoothBaseMesh = Mesh.CreateFromSubD(node.CoatingBaseSubD, pathAdhesiveness);
+            Mesh spraySmoothBaseMesh = Mesh.CreateFromSubD(node.SprayBaseSubD, pathAdhesiveness);
             List<Curve> sprayPath = new List<Curve>();
             foreach (Curve crv in InteriorEdges)
             {
@@ -198,7 +207,6 @@ namespace PrecisionNode
         }
 
         /// <summary>
-        /// Backup 4F90A80F-9E39-4300-B311-1BB15F65DC3D
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
         public override Guid ComponentGuid

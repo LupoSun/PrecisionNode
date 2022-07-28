@@ -7,6 +7,10 @@
     <Description>Description of PrecisionNode</Description>
     <TargetExt>.gha</TargetExt>
   </PropertyGroup>
+	
+  <ItemGroup>
+    <Compile Remove="SprayPath_Original.cs" />
+  </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="Grasshopper" Version="7.19.22180.9001" IncludeAssets="compile;build" />

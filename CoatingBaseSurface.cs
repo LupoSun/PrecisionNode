@@ -35,7 +35,6 @@ namespace PrecisionNode
         {
             pManager.AddSubDParameter("SubD", "S", "The base SubD suface for the spay process", GH_ParamAccess.item);
             pManager.AddBrepParameter("Brep", "B", "The base Brep suface for the spay process", GH_ParamAccess.item);
-            pManager.AddNumberParameter("Wall Thickness", "WT", "The wall thickness of the core geometry", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -51,14 +50,12 @@ namespace PrecisionNode
 
             SubD CoatingBaseSubD = null;
             Brep CoatingBaseBrep = null;
-            double WallThickness = double.NaN;
 
             if (node.CoreGeometry == null) AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, String.Format("Node {0} doesn't have a core geometry yet",
                 node.NodeNum));
             else
             {
                 CoatingBaseSubD = node.CoatingBaseSubD;
-                WallThickness = node.CoreWallThickness;
 
                 if (packed) CoatingBaseBrep = CoatingBaseSubD.ToBrep(SubDToBrepOptions.DefaultPacked);
                 else CoatingBaseBrep = CoatingBaseSubD.ToBrep(SubDToBrepOptions.Default);
@@ -66,7 +63,6 @@ namespace PrecisionNode
 
             DA.SetData(0, CoatingBaseSubD);
             DA.SetData(1, CoatingBaseBrep);
-            DA.SetData(2, WallThickness);
 
         }
 

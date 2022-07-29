@@ -26,6 +26,7 @@ namespace PrecisionNode
         public double Radius { get { return radius; } }
         public SubD BranchSimpleSubD { get { return branchSimpleSubD; } }
         public Brep BranchLoft { get { return branchLoft; } }
+        public int BranchNum { get { return branchNum; } }
 
         public Curve CylinderIntersection { get { return cylinderIntersection; } }
 

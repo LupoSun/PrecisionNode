@@ -17,6 +17,16 @@ namespace PrecisionNode
         private double coreThreadWallThickness;
         private Brep coatingGeometry;
         private List<Curve> sprayPath;
+
+        //REDUNDENT
+        private Dictionary<int, double> branchRadii;
+        private Dictionary<int, Vector3d> branchLoadVectors;
+        private Dictionary<int, Point3d> branchStartPoints;
+        private Dictionary<int, Plane> branchStartPlanes;
+        //REDUNDENT
+
+        private Dictionary<int, NodeBranch> nodeBranchDict;
+        private Point3d nodeCentrePoint;
         
 
 
@@ -27,8 +37,17 @@ namespace PrecisionNode
         public int NodeNum { get { return nodeNum; } set { nodeNum = value; }}
         public double CoreThreadWallThickness { get { return coreThreadWallThickness; } set { coreThreadWallThickness = value; } }
         public double CoreWallThickness { get { return coreWallThickness; } set { coreWallThickness = value; } }
-        public List<Curve> SprayPath { get { return sprayPath; } set { sprayPath = value; }
-        }
+        public List<Curve> SprayPath { get { return sprayPath; } set { sprayPath = value; } }
+
+        //REDUNDENT
+        public Dictionary<int, double> BranchRadii { get { return branchRadii; } }
+        public Dictionary<int, Vector3d> BranchLoadVectors { get { return branchLoadVectors; } }
+        public Dictionary<int, Point3d> BranchStartPoints { get { return branchStartPoints; } }
+        public Dictionary<int, Plane> BranchStartPlanes { get { return branchStartPlanes; } }
+        //REDUNDENT
+
+        public Dictionary<int, NodeBranch> NodeBranchDict { get { return nodeBranchDict; } }
+        public Point3d NodeCentrePoint { get { return nodeCentrePoint; } set { nodeCentrePoint = value; } }
         
 
         /// <summary>
@@ -45,6 +64,16 @@ namespace PrecisionNode
             coatingGeometry = null;
             this.nodeNum = nodeNum;
             sprayPath = new List<Curve>();
+
+            //REDUNDENT
+            branchRadii = new Dictionary<int, double>();
+            branchLoadVectors = new Dictionary<int, Vector3d>();
+            branchStartPoints = new Dictionary<int, Point3d>();
+            branchStartPlanes = new Dictionary<int, Plane>();
+            //REDUNDENT
+
+            nodeCentrePoint = new Point3d();
+            nodeBranchDict = new Dictionary<int, NodeBranch>();
         }
         /// <summary>
         /// 
@@ -62,6 +91,16 @@ namespace PrecisionNode
             coatingGeometry = null;
             this.nodeNum = nodeNum;
             sprayPath = new List<Curve>();
+
+            //REDUNDENT
+            branchRadii = new Dictionary<int, double>();
+            branchLoadVectors = new Dictionary<int, Vector3d>();
+            branchStartPoints = new Dictionary<int, Point3d>();
+            branchStartPlanes = new Dictionary<int, Plane>();
+            //REDUNDENT
+
+            nodeCentrePoint = new Point3d();
+            nodeBranchDict = new Dictionary<int, NodeBranch>();
         }
 
         /// <summary>
@@ -138,6 +177,32 @@ namespace PrecisionNode
             Brep[] booleanDifferenceResult = Brep.CreateBooleanDifference(solid, innerSolid, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
             this.coreGeometry = booleanDifferenceResult[0];
 
+        }
+
+        /// <summary>
+        /// Initialise the information of a node base on the current list of the NodeBranches
+        /// </summary>
+        public void InitialiseNodeInfo()
+        {
+            if (nodeBranches.Count > 0)
+            {
+                //set the centre point of the node
+                nodeCentrePoint = nodeBranches[0].CentrePoint;
+
+                foreach (NodeBranch nodeBranch in nodeBranches)
+                {
+                    int BranchNum = nodeBranch.BranchNum;
+                    NodeBranchDict.Add(BranchNum, nodeBranch);
+
+                    //REDUNDENT
+                    branchRadii.Add(BranchNum, nodeBranch.Radius);
+                    branchStartPoints.Add(BranchNum, nodeBranch.BranchStartPoint);
+                    branchLoadVectors.Add(BranchNum, nodeCentrePoint - nodeBranch.BranchStartPoint);
+                    branchStartPlanes.Add(BranchNum, nodeBranch.BranchStartPlane);
+                    //REDUNDENT
+                }
+
+            }
         }
     }
 }

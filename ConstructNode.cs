@@ -2,6 +2,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
+using Rhino.Geometry.Intersect;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,11 +33,13 @@ namespace PrecisionNode
             pManager.AddCurveParameter("BranchCurves",
                 "BCrv",
                 "The centre lines of the branches in the nodes",
-                GH_ParamAccess.tree);
+                GH_ParamAccess.list);
             pManager.AddNumberParameter("BranchRadius",
                 "BR",
                 "The radii of the branches",
-                GH_ParamAccess.tree);
+                GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Node Number", "NNum", "The number of the node, by default 0", GH_ParamAccess.item);
+            pManager[2].Optional = true;
         }
 
         /// <summary>
@@ -44,7 +47,7 @@ namespace PrecisionNode
         /// </summary>
         protected override void RegisterOutputParams(GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Nodes", "N", "The constructed nodes", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Nodes", "N", "The constructed nodes", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -54,102 +57,113 @@ namespace PrecisionNode
         /// to store data in output parameters.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //Extra step of converting scripting DataTree to GH_Structure
-            GH_Structure<GH_Curve> pipeLines;
-            GH_Structure<GH_Number> pipeRadius;
 
-            bool success1 = DA.GetDataTree(0, out pipeLines);
-            bool success2 = DA.GetDataTree(1, out pipeRadius);
+            //read in the data from the inputs
+            List<Curve> pipeLines = new List<Curve>();
+            List<double> pipeRadii = new List<double>();
+            int nodeNum = 0;
 
-            if (success1 && success2)
+            bool successPipeLines = DA.GetDataList(0, pipeLines);
+            bool successPipeRadii = DA.GetDataList(1, pipeRadii);
+            bool successNodeNum = DA.GetData(2, ref nodeNum);
+            if (!successNodeNum) nodeNum = 0;
+
+            Node node = null;
+
+            if (successPipeLines & successPipeRadii)
             {
-                //Operation carried out based on data tree structure
-                List<SubD> nodeSubDs = new List<SubD>();
-                List<Node> nodes = new List<Node>();
+                bool openIntersections = false;
+                double nodeRadius = pipeRadii.OrderByDescending(x => x).ToList()[0];
+                //Sort out the topological relationship of the pipe centre lines
+                List<Point3d> branchstartPoints;
+                Point3d centrePoint = Utilities.PipeLinesSort(pipeLines, out branchstartPoints);
 
-                for (int i = 0; i < pipeLines.Branches.Count; i++)
+                //Initialize all the NodeBranch objects and put them into a Node object
+                node = new Node(nodeNum);
+
+                //First loop finds all the intersection curves and examine if the intersection is closed,
+                Dictionary<Point3d, Curve> intersectionDic = new Dictionary<Point3d, Curve>();
+                List<Point3d> loseEnds = new List<Point3d>();
+                List<Vector3d> branchVectors = new List<Vector3d>();
+
+                foreach (Point3d branchStartPoint in branchstartPoints)
                 {
-                    List<Curve> branchPipeLines = new List<Curve>();
-                    List<double> branchPipeRadius = new List<double>();
-                    foreach (GH_Curve gh_PipeLines in pipeLines[i])
+                    branchVectors.Add(centrePoint - branchStartPoint);
+                    Curve intersection;
+                    if (Utilities.CylinderIntersection(branchStartPoint, branchstartPoints, 
+                        centrePoint, nodeRadius, out intersection))
                     {
-                        branchPipeLines.Add(gh_PipeLines.Value);
-                    }
-
-                    foreach (GH_Number gh_Radius in pipeRadius[i])
-                    {
-                        branchPipeRadius.Add(gh_Radius.Value);
-                    }
-
-                    double nodeRadius = branchPipeRadius.OrderByDescending(x => x).ToList()[0];
-                    //Sort out the topological relationship of the pipe centre lines
-                    List<Point3d> branchstartPoints;
-                    Point3d centrePoint = Utilities.PipeLinesSort(branchPipeLines, out branchstartPoints);
-
-                    //Initialize all the NodeBranch objects and put them into a Node object
-                    Node node = new Node(i);
-
-                    //First loop finds all the intersection curves and examine if the intersection is closed,
-                    Dictionary<Point3d, Curve> intersectionDic = new Dictionary<Point3d, Curve>();
-                    List<Point3d> loseEnds = new List<Point3d>();
-
-                    foreach (Point3d branchStartPoint in branchstartPoints)
-                    {
-                        Curve intersection;
-                        if (Utilities.CylinderIntersection(branchStartPoint, branchstartPoints, centrePoint, nodeRadius,
-                                out intersection))
+                        if (!intersection.IsClosed)
                         {
-                            if (!intersection.IsClosed)
-                            {
-                                loseEnds.Add(intersection.PointAtStart);
-                                loseEnds.Add(intersection.PointAtEnd);
-                            }
-
-                            intersectionDic.Add(branchStartPoint, intersection);
-                        }
-                    }
-
-                    //compute the average position of all the lose ends
-                    Point3d sum = new Point3d(0, 0, 0);
-                    foreach (Point3d point in loseEnds)
-                    {
-                        sum += point;
-                    }
-
-                    Point3d averagePosition = sum / loseEnds.Count;
-
-                    //second loop constructs the nodes with the (bridged) intersection curves
-                    int branchNum = 0;
-                    foreach (KeyValuePair<Point3d, Curve> kvp in intersectionDic)
-                    {
-                        Point3d branchstartPoint = kvp.Key;
-                        Curve intersection = kvp.Value;
-
-                        //Find the corresponding index for radius
-                        int IndexOfRadius = branchstartPoints.IndexOf(branchstartPoint);
-                        //Fail safe, if the index can't be found
-                        if (IndexOfRadius == -1) IndexOfRadius = branchPipeRadius.Count - 1;
-                        if (IndexOfRadius > branchPipeRadius.Count - 1) IndexOfRadius = branchPipeRadius.Count - 1;
-                        double branchRadius = branchPipeRadius[IndexOfRadius];
-
-                        NodeBranch nodeBranch = new NodeBranch(branchstartPoint, centrePoint, intersection, branchRadius,
-                            branchNum);
-                        branchNum++;
-
-                        if (!kvp.Value.IsClosed)
-                        {
-                            nodeBranch.AddIntersectionCorners(averagePosition);
+                            openIntersections = true;
+                            loseEnds.Add(intersection.PointAtStart);
+                            loseEnds.Add(intersection.PointAtEnd);
                         }
 
-                        node.NodeBranches.Add(nodeBranch);
+                        intersectionDic.Add(branchStartPoint, intersection);
                     }
-
-                    node.InitialiseNodeInfo();
-                    nodes.Add(node);
-
                 }
 
-                DA.SetDataList(0, nodes);
+                //compute the average position of all the lose ends and the average vector
+                Point3d sum = new Point3d(0, 0, 0);
+                foreach (Point3d point in loseEnds)
+                {
+                    sum += point;
+                }
+                Point3d averagePosition = sum / loseEnds.Count;
+
+                Vector3d sumVector = new Vector3d(0,0,0);
+                foreach(Vector3d vector in branchVectors)
+                {
+                    sumVector += vector;
+                }
+
+                if (openIntersections)
+                {
+                    //pull the everage point onto the sphere with the radius of the node
+                    /*
+                    NurbsSurface nurbSphere = NurbsSurface.CreateFromSphere(new Sphere(centrePoint, nodeRadius));
+                    double u, v;
+                    if (nurbSphere.ClosestPoint(averagePosition, out u, out v))
+                    {
+                        averagePosition = nurbSphere.PointAt(u, v);
+                    }
+                    */
+                    Brep brepShpere = Brep.CreateFromSphere(new Sphere(centrePoint, nodeRadius));
+                    Point3d[] averagePositions = Intersection.ProjectPointsToBreps(new Brep[] { brepShpere },
+                        new Point3d[] { averagePosition },
+                        -sumVector,
+                        Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
+                    if (averagePositions != null) averagePosition = averagePositions[0];
+                }
+
+                //second loop constructs the nodes with the (bridged) intersection curves
+                int branchNum = 0;
+                foreach (KeyValuePair<Point3d, Curve> kvp in intersectionDic)
+                {
+                    Point3d branchstartPoint = kvp.Key;
+                    Curve intersection = kvp.Value;
+
+                    //Find the corresponding index for radius
+                    int IndexOfRadius = branchstartPoints.IndexOf(branchstartPoint);
+                    //Fail safe, if the index can't be found
+                    if (IndexOfRadius == -1) IndexOfRadius = pipeRadii.Count - 1;
+                    if (IndexOfRadius > pipeRadii.Count - 1) IndexOfRadius = pipeRadii.Count - 1;
+                    double branchRadius = pipeRadii[IndexOfRadius];
+
+                    NodeBranch nodeBranch = new NodeBranch(branchstartPoint, centrePoint, intersection, branchRadius,
+                        branchNum);
+                    branchNum++;
+
+                    if (!kvp.Value.IsClosed)
+                    {
+                        nodeBranch.AddIntersectionCorners(averagePosition);
+                    }
+                    node.NodeBranches.Add(nodeBranch);
+                }
+
+                node.InitialiseNodeInfo();
+                DA.SetData(0, node);
             }
             else AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Failed to collect data");
         }
@@ -167,6 +181,6 @@ namespace PrecisionNode
         /// It is vital this Guid doesn't change otherwise old ghx files 
         /// that use the old ID will partially fail during loading.
         /// </summary>
-        public override Guid ComponentGuid => new Guid("2484DB25-8DED-46EA-8C4B-F2333CF98993");
+        public override Guid ComponentGuid => new Guid("4941A65F-E0B6-427E-AF27-B4D21EF237C8");
     }
 }

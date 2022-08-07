@@ -61,6 +61,7 @@ namespace PrecisionNode
             //read in the data from the inputs
             List<Curve> pipeLines = new List<Curve>();
             List<double> pipeRadii = new List<double>();
+            double DOCABSOLUTETOLERANCE = Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
             int nodeNum = 0;
 
             bool successPipeLines = DA.GetDataList(0, pipeLines);
@@ -72,8 +73,9 @@ namespace PrecisionNode
 
             if (successPipeLines & successPipeRadii)
             {
-                bool openIntersections = false;
                 double nodeRadius = pipeRadii.OrderByDescending(x => x).ToList()[0];
+                double stichDistance = nodeRadius / 2;
+
                 //Sort out the topological relationship of the pipe centre lines
                 List<Point3d> branchstartPoints;
                 Point3d centrePoint = Utilities.PipeLinesSort(pipeLines, out branchstartPoints);
@@ -81,65 +83,108 @@ namespace PrecisionNode
                 //Initialize all the NodeBranch objects and put them into a Node object
                 node = new Node(nodeNum);
 
-                //First loop finds all the intersection curves and examine if the intersection is closed,
-                Dictionary<Point3d, Curve> intersectionDic = new Dictionary<Point3d, Curve>();
-                List<Point3d> loseEnds = new List<Point3d>();
-                List<Vector3d> branchVectors = new List<Vector3d>();
+                bool openIntersectionExists = false;
+                Point3d branchWithStichPotencial = new Point3d();
+                List<Point3d> loseEnds;
+                List<Vector3d> branchVectors;
+                bool stichNeeded = false;
+                Point3d pointToSwap1 = new Point3d();
+                Point3d pointToSwap2 = new Point3d();
+                Point3d stichPosition = new Point3d();
+                Point3d averagePosition = new Point3d();
+
+                //1. Find all the intersection curves and examine if the intersection is closed
+                //and and putting all the lose ends into a dictionary
+                Dictionary<Point3d, Curve> intersectionDict = new Dictionary<Point3d, Curve>();
+                Dictionary<Point3d, List<Point3d>> loseEndsDict = new Dictionary<Point3d, List<Point3d>>();
 
                 foreach (Point3d branchStartPoint in branchstartPoints)
                 {
-                    branchVectors.Add(centrePoint - branchStartPoint);
                     Curve intersection;
-                    if (Utilities.CylinderIntersection(branchStartPoint, branchstartPoints, 
-                        centrePoint, nodeRadius, out intersection))
+                    if (Utilities.CylinderIntersection(branchStartPoint, branchstartPoints,
+                      centrePoint, nodeRadius, out intersection))
                     {
                         if (!intersection.IsClosed)
                         {
-                            openIntersections = true;
-                            loseEnds.Add(intersection.PointAtStart);
-                            loseEnds.Add(intersection.PointAtEnd);
+                            openIntersectionExists = true;
+                            Point3d loseEndStart = intersection.PointAtStart;
+                            Point3d loseEndEnd = intersection.PointAtEnd;
+                            loseEndsDict.Add(branchStartPoint, new List<Point3d> { loseEndStart, loseEndEnd });
                         }
-
-                        intersectionDic.Add(branchStartPoint, intersection);
+                        intersectionDict.Add(branchStartPoint, intersection);
                     }
                 }
 
-                //compute the average position of all the lose ends and the average vector
-                Point3d sum = new Point3d(0, 0, 0);
-                foreach (Point3d point in loseEnds)
+                if (openIntersectionExists)
                 {
-                    sum += point;
-                }
-                Point3d averagePosition = sum / loseEnds.Count;
+                    //2. Construct the list of lose ends depending on if one stich needed
+                    branchWithStichPotencial = loseEndsDict.OrderBy(x => x.Value[0].DistanceTo(x.Value[1])).First().Key;
+                    loseEnds = new List<Point3d>();
+                    branchVectors = new List<Vector3d>();
+                    pointToSwap1 = new Point3d();
+                    pointToSwap2 = new Point3d();
 
-                Vector3d sumVector = new Vector3d(0,0,0);
-                foreach(Vector3d vector in branchVectors)
-                {
-                    sumVector += vector;
-                }
-
-                if (openIntersections)
-                {
-                    //pull the everage point onto the sphere with the radius of the node
-                    /*
-                    NurbsSurface nurbSphere = NurbsSurface.CreateFromSphere(new Sphere(centrePoint, nodeRadius));
-                    double u, v;
-                    if (nurbSphere.ClosestPoint(averagePosition, out u, out v))
+                    if (loseEndsDict[branchWithStichPotencial][0].DistanceTo(loseEndsDict[branchWithStichPotencial][1]) < stichDistance)
                     {
-                        averagePosition = nurbSphere.PointAt(u, v);
+                        stichNeeded = true;
+                        pointToSwap1 = loseEndsDict[branchWithStichPotencial][0];
+                        pointToSwap2 = loseEndsDict[branchWithStichPotencial][1];
+                        stichPosition = (pointToSwap1 + pointToSwap2) / 2;
+                        loseEnds.Add(stichPosition);
+
+                        foreach (KeyValuePair<Point3d, List<Point3d>> kvp in loseEndsDict)
+                        {
+                            if (!kvp.Key.EpsilonEquals(branchWithStichPotencial, DOCABSOLUTETOLERANCE))
+                            {
+                                foreach (Point3d point in kvp.Value)
+                                {
+                                    if (!point.EpsilonEquals(pointToSwap1, DOCABSOLUTETOLERANCE)
+                                      && !point.EpsilonEquals(pointToSwap2, DOCABSOLUTETOLERANCE))
+                                    {
+                                        loseEnds.Add(point);
+                                    }
+                                }
+                                branchVectors.Add(centrePoint - kvp.Key);
+                            }
+                        }
                     }
-                    */
+                    else
+                    {
+                        foreach (KeyValuePair<Point3d, List<Point3d>> kvp in loseEndsDict)
+                        {
+                            loseEnds.AddRange(kvp.Value);
+                            branchVectors.Add(centrePoint - kvp.Key);
+                        }
+                    }
+
+                    //3. Compute the average position of all the lose ends and the average vector
+                    Point3d sum = new Point3d(0, 0, 0);
+                    loseEnds = Point3d.CullDuplicates(loseEnds, DOCABSOLUTETOLERANCE).ToList();
+                    foreach (Point3d point in loseEnds)
+                    {
+                        sum += point;
+                    }
+                    averagePosition = sum / loseEnds.Count;
+
+                    Vector3d sumVector = new Vector3d(0, 0, 0);
+                    foreach (Vector3d vector in branchVectors)
+                    {
+                        sumVector += vector;
+                    }
+
+                    //4. Peoject the average position along the sum vector of all branches with unclosed intersection
+
                     Brep brepShpere = Brep.CreateFromSphere(new Sphere(centrePoint, nodeRadius));
                     Point3d[] averagePositions = Intersection.ProjectPointsToBreps(new Brep[] { brepShpere },
-                        new Point3d[] { averagePosition },
-                        -sumVector,
-                        Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
+                      new Point3d[] { averagePosition },
+                      -sumVector,
+                      DOCABSOLUTETOLERANCE);
                     if (averagePositions != null) averagePosition = averagePositions[0];
-                }
 
-                //second loop constructs the nodes with the (bridged) intersection curves
+                }
+                //5. second loop constructs the nodes with the (bridged) intersection curves
                 int branchNum = 0;
-                foreach (KeyValuePair<Point3d, Curve> kvp in intersectionDic)
+                foreach (KeyValuePair<Point3d, Curve> kvp in intersectionDict)
                 {
                     Point3d branchstartPoint = kvp.Key;
                     Curve intersection = kvp.Value;
@@ -152,12 +197,31 @@ namespace PrecisionNode
                     double branchRadius = pipeRadii[IndexOfRadius];
 
                     NodeBranch nodeBranch = new NodeBranch(branchstartPoint, centrePoint, intersection, branchRadius,
-                        branchNum);
+                      branchNum);
                     branchNum++;
 
-                    if (!kvp.Value.IsClosed)
+                    if (openIntersectionExists)
                     {
-                        nodeBranch.AddIntersectionCorners(averagePosition);
+                        if (!kvp.Value.IsClosed)
+                        {
+                            if (stichNeeded)
+                            {
+                                List<Point3d> pointToBeSubtituded = new List<Point3d> { pointToSwap1, pointToSwap2 };
+                                if (kvp.Key.EpsilonEquals(branchWithStichPotencial, DOCABSOLUTETOLERANCE))
+                                {
+                                    nodeBranch.InitialiseIntersectionCorners();
+                                }
+                                else
+                                {
+                                    nodeBranch.AddAveragePosition(averagePosition);
+                                }
+                                nodeBranch.SubtitudeIntersectionCorners(stichPosition, pointToBeSubtituded);
+                            }
+                            else
+                            {
+                                nodeBranch.AddAveragePosition(averagePosition);
+                            }
+                        }
                     }
                     node.NodeBranches.Add(nodeBranch);
                 }
@@ -181,6 +245,6 @@ namespace PrecisionNode
         /// It is vital this Guid doesn't change otherwise old ghx files 
         /// that use the old ID will partially fail during loading.
         /// </summary>
-        public override Guid ComponentGuid => new Guid("4941A65F-E0B6-427E-AF27-B4D21EF237C8");
+        public override Guid ComponentGuid => new Guid("3D4C0A88-B15B-4E6F-9FF8-F108AD6F5EB8");
     }
 }

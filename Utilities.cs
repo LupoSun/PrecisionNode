@@ -294,6 +294,8 @@ namespace PrecisionNode
         {
             //clean up and remove duplicate points before start
             intersectionCorners = Point3d.CullDuplicates(intersectionCorners, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance).ToList();
+            //Sort intersectionCorners Radially
+            intersectionCorners = PlaneRadialPointSort(intersectionCorners, basePlane);
             //add the first point to the end to close the curve
             intersectionCorners.Add(intersectionCorners[0]);
             PolylineCurve intersectionCurve = new PolylineCurve(intersectionCorners);

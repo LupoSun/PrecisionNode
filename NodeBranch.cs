@@ -20,6 +20,7 @@ namespace PrecisionNode
         private readonly int branchNum;
         private readonly Plane branchStartPlane;
 
+        public List<Point3d> IntersectionCorners { get { return intersectionCorners; } set { intersectionCorners = value; } }
         public Plane BranchStartPlane { get { return branchStartPlane; } }
         public Point3d BranchStartPoint { get { return branchStartPoint; } }
         public Point3d CentrePoint { get { return centrePoint; } }
@@ -33,12 +34,27 @@ namespace PrecisionNode
         /// <summary>
         /// Automatically add more intersectionCorners to the internal list
         /// </summary>
-        /// <param name="cornerToAdd"></param>
-        public void AddIntersectionCorners(Point3d cornerToAdd)
+        /// <param name="averagePosition"></param>
+        public void AddAveragePosition(Point3d averagePosition)
         {
-            List<Point3d> cornersToAdd = new List<Point3d>{cornerToAdd};
-            intersectionCorners = GetIntersectionCorners(cylinderIntersection, branchStartPlane,40, cornersToAdd);
-            intersectionCorners = PlaneRadialPointSort(intersectionCorners, branchStartPlane);
+            List<Point3d> averagePositionToAdd = new List<Point3d>{averagePosition};
+            intersectionCorners = GetIntersectionCorners(cylinderIntersection, branchStartPlane,40, averagePositionToAdd);
+            //intersectionCorners = PlaneRadialPointSort(intersectionCorners, branchStartPlane);
+        }
+
+        public void SubtitudeIntersectionCorners(Point3d PointSubtituting, List<Point3d> PointsToBeSubtituted)
+        {
+            List<Point3d> substitutedCorners = new List<Point3d>();
+            Point3d toBeSubtituted1 = PointsToBeSubtituted[0];
+            Point3d toBeSubtituted2 = PointsToBeSubtituted[1];
+
+            foreach (Point3d corner in intersectionCorners) {
+                if (corner.EpsilonEquals(toBeSubtituted1, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)) substitutedCorners.Add(PointSubtituting);
+                else if (corner.EpsilonEquals(toBeSubtituted2, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)) substitutedCorners.Add(PointSubtituting);
+                else substitutedCorners.Add(corner);
+            }
+                intersectionCorners = substitutedCorners;
+
         }
         /// <summary>
         /// Create the SubD and Loft Geometry and store them in the NodeBranch object
@@ -51,8 +67,15 @@ namespace PrecisionNode
                 intersectionCorners = GetIntersectionCorners(cylinderIntersection, branchStartPlane);
             }
             //sort the corners radially
-            intersectionCorners = PlaneRadialPointSort(intersectionCorners, branchStartPlane);
+            //intersectionCorners = PlaneRadialPointSort(intersectionCorners, branchStartPlane);
             LoftBranch(intersectionCorners, radius, branchStartPlane, out branchLoft, out branchSimpleSubD);
+        }
+        /// <summary>
+        /// Initiate the list of intersection corners according to the original intersection curve.
+        /// </summary>
+        public void InitialiseIntersectionCorners()
+        {
+            intersectionCorners = GetIntersectionCorners(cylinderIntersection, branchStartPlane);
         }
         public NodeBranch(Point3d startPoint, Point3d centrePoint, Curve cylinderIntersection, double radius, int branchNum)
         {

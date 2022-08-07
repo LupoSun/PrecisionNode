@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace PrecisionNode
 {
-    public class ConstructNodeLEGACY : GH_Component
+    public class ConstructNodeLEGACY1 : GH_Component
     {
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -17,8 +17,8 @@ namespace PrecisionNode
         /// Subcategory the panel. If you use non-existing tab or panel names, 
         /// new tabs/panels will automatically be created.
         /// </summary>
-        public ConstructNodeLEGACY()
-          : base("Construct Node LEGACY", "CN OLD",
+        public ConstructNodeLEGACY1()
+          : base("Construct Node LEGACY1", "CN OLD",
             "Create nodes information object",
             "PrecisionNode", "Node Designer")
         {
@@ -138,7 +138,7 @@ namespace PrecisionNode
 
                         if (!kvp.Value.IsClosed)
                         {
-                            nodeBranch.AddIntersectionCorners(averagePosition);
+                            nodeBranch.AddAveragePosition(averagePosition);
                         }
 
                         node.NodeBranches.Add(nodeBranch);

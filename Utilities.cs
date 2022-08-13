@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Rhino;
 using Rhino.Geometry;
 
+
 namespace PrecisionNode
 {
     public class Utilities
@@ -182,6 +183,113 @@ namespace PrecisionNode
             Point3d[] pointDupRemoved = Point3d.CullDuplicates(intersectionCorners, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
 
             return pointDupRemoved.ToList();
+        }
+
+        /// <summary>
+        /// This function preaasumes that the cylinder intersection curve is not closed and computes the intersection corners with added average position and substitutes the loose ends with stich positions
+        /// </summary>
+        /// <param name="cylinderIntersection"></param>
+        /// <param name="basePlane"></param>
+        /// <param name="divisionAngle"></param>
+        /// <param name="averagePosition"></param>
+        /// <returns></returns>
+        public static List<Point3d> GetIntersectionCornersWithAveragePositionAndSubstitutes(Curve cylinderIntersection, Plane basePlane, List<Point3d> averagePosition, double divisionAngle,
+            Point3d stichPosition1, List<Point3d> pointsToBeSubstituted1, 
+            Point3d stichPosition2 = new Point3d(), List<Point3d> pointsToBeSubstituted2 = null)
+        {
+            List<Point3d> intersectionCorners  = new List<Point3d>();
+            List<Curve> segments = new List<Curve>();
+            Curve[] curveSegments;
+            if (cylinderIntersection is PolyCurve)
+            {
+                //check if the intersection is a PolyCurve 
+                curveSegments = ((PolyCurve)cylinderIntersection).Explode();
+            }
+            else { curveSegments = new Curve[] { cylinderIntersection }; }
+            segments.AddRange(curveSegments);
+
+            Point3d startPoint = cylinderIntersection.PointAtStart;
+            Point3d endPoint = cylinderIntersection.PointAtEnd;
+
+            //To see if the lose ends need to be substituded
+            foreach(Point3d point in pointsToBeSubstituted1)
+            {
+                if (endPoint.EpsilonEquals(point, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)) endPoint = stichPosition1;
+                if (startPoint.EpsilonEquals(point, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)) startPoint = stichPosition1;
+            }
+            if(pointsToBeSubstituted2 != null)
+            {
+                foreach (Point3d point in pointsToBeSubstituted2)
+                {
+                    if (endPoint.EpsilonEquals(point, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)) endPoint = stichPosition2;
+                    if (startPoint.EpsilonEquals(point, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)) startPoint = stichPosition2;
+                }
+            }
+
+            intersectionCorners.AddRange(GetIntersectionCorners(new LineCurve(endPoint, averagePosition[0]), basePlane, divisionAngle));
+            intersectionCorners.AddRange(GetIntersectionCorners(new LineCurve(averagePosition[0], startPoint), basePlane, divisionAngle));
+
+
+            List<NurbsCurve> rebuiltSegments = new List<NurbsCurve>();
+
+            Transform projection = Transform.PlanarProjection(basePlane);
+
+            foreach (Curve curve in segments)
+            {
+                //measure the angle between two vectors from the endpoints to the plane origin with respect of normal vector
+                Vector3d vStart = curve.PointAtStart - basePlane.Origin;
+                vStart.Transform(projection);
+                Vector3d vEnd = curve.PointAtEnd - basePlane.Origin;
+                vEnd.Transform(projection);
+                int segmentNum = (int)(Vector3d.VectorAngle(vStart, vEnd) / (Math.PI / 180 * (divisionAngle - RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)));
+                //to have a minimum segmentNum for rebuilding
+                if (segmentNum == 0) segmentNum++;
+                //rebuild the Curve acccording to the determined segment number
+                NurbsCurve rebuilt = curve.Rebuild(segmentNum + 1, 1, false);
+                if (rebuilt != null) rebuiltSegments.Add(rebuilt);
+            }
+
+            //add all the end points of the segments into the list as a failsafe for the next step
+            foreach (Curve curve in rebuiltSegments)
+            {
+                intersectionCorners.Add(curve.PointAtEnd);
+                intersectionCorners.Add(curve.PointAtStart);
+            }
+
+            //get the joined PolyLine after rebuilding
+            PolylineCurve joinedRebuilt = (PolylineCurve)Curve.JoinCurves(rebuiltSegments)[0];
+
+            //find all the corners
+            for (int i = 0; i < joinedRebuilt.PointCount - 1; i++)
+            {
+                intersectionCorners.Add(joinedRebuilt.Point(i));
+            }
+
+            //substitute all the loose ends that are stiched
+            intersectionCorners = SubtitudePoint(intersectionCorners, stichPosition1, pointsToBeSubstituted1);
+            if (pointsToBeSubstituted2 != null) intersectionCorners = SubtitudePoint(intersectionCorners, stichPosition2, pointsToBeSubstituted2);
+
+            //clean up and remove all the duplicate points
+            Point3d[] pointDupRemoved = Point3d.CullDuplicates(intersectionCorners, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance);
+
+            return pointDupRemoved.ToList();
+        }
+
+        public static List<Point3d> SubtitudePoint(List<Point3d> PointList, Point3d PointSubtituting, List<Point3d> PointsToBeSubtituted)
+        {
+            List<Point3d> substitutedCorners = new List<Point3d>();
+            Point3d toBeSubtituted1 = PointsToBeSubtituted[0];
+            Point3d toBeSubtituted2 = PointsToBeSubtituted[1];
+
+            foreach (Point3d point in PointList)
+            {
+                if (point.EpsilonEquals(toBeSubtituted1, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)) substitutedCorners.Add(PointSubtituting);
+                else if (point.EpsilonEquals(toBeSubtituted2, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)) substitutedCorners.Add(PointSubtituting);
+                else substitutedCorners.Add(point);
+            }
+            
+            return substitutedCorners;
+
         }
 
         /// <summary>

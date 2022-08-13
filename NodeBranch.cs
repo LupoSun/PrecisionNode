@@ -41,6 +41,11 @@ namespace PrecisionNode
             intersectionCorners = GetIntersectionCorners(cylinderIntersection, branchStartPlane,40, averagePositionToAdd);
             //intersectionCorners = PlaneRadialPointSort(intersectionCorners, branchStartPlane);
         }
+        public void AddAveragePositionWithSubstitutes(Point3d averagePosition, Point3d stichPosition1, List<Point3d> pointsToBeSubstituted1, Point3d stichPosition2 = new Point3d(), List<Point3d> pointsToBeSubstituted2 = null)
+        {
+            List<Point3d> averagePositionToAdd = new List<Point3d> { averagePosition };
+            intersectionCorners = GetIntersectionCornersWithAveragePositionAndSubstitutes(CylinderIntersection, BranchStartPlane, averagePositionToAdd, 40, stichPosition1, pointsToBeSubstituted1, stichPosition2, pointsToBeSubstituted2);
+        }
 
         public void SubtitudeIntersectionCorners(Point3d PointSubtituting, List<Point3d> PointsToBeSubtituted)
         {

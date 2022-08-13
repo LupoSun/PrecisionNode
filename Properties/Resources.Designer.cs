@@ -83,6 +83,16 @@ namespace PrecisionNode.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap ConstructNodesLEGACY {
+            get {
+                object obj = ResourceManager.GetObject("ConstructNodesLEGACY", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap CoreGeometry {
             get {
                 object obj = ResourceManager.GetObject("CoreGeometry", resourceCulture);

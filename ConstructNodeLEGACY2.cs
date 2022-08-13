@@ -19,7 +19,7 @@ namespace PrecisionNode
         /// new tabs/panels will automatically be created.
         /// </summary>
         public ConstructNodeLEGACY2()
-          : base("Construct Node LEGACY2", "CN",
+          : base("Construct Node LEGACY2", "CN2",
             "Create nodes information object",
             "PrecisionNode", "Node Designer")
         {
@@ -174,7 +174,7 @@ namespace PrecisionNode
         /// You can add image files to your project resources and access them like this:
         /// return Resources.IconForThisComponent;
         /// </summary>
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.ConstructNodes;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.ConstructNodesLEGACY;
 
         /// <summary>
         /// Each component must have a unique Guid to identify it. 

@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace PrecisionNode
 {
-    public class ConstructNodeLEGACY : GH_Component
+    public class ConstructNodeLEGACY3 : GH_Component
     {
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -18,8 +18,8 @@ namespace PrecisionNode
         /// Subcategory the panel. If you use non-existing tab or panel names, 
         /// new tabs/panels will automatically be created.
         /// </summary>
-        public ConstructNodeLEGACY()
-          : base("Construct Node", "CN",
+        public ConstructNodeLEGACY3()
+          : base("Construct Node LEGACY3", "CN3",
             "Create nodes information object",
             "PrecisionNode", "Node Designer")
         {
@@ -30,20 +30,16 @@ namespace PrecisionNode
         /// </summary>
         protected override void RegisterInputParams(GH_InputParamManager pManager)
         {
-            pManager.AddCurveParameter("Branch Curves",
+            pManager.AddCurveParameter("BranchCurves",
                 "BCrv",
                 "The centre lines of the branches in the nodes",
                 GH_ParamAccess.list);
-            pManager.AddNumberParameter("Branch Radius",
+            pManager.AddNumberParameter("BranchRadius",
                 "BR",
                 "The radii of the branches",
                 GH_ParamAccess.list);
-            pManager.AddNumberParameter("Bulge Size Multiplier",
-                "BSM",
-                "The multiplier for the bulge size, by default 1, which adapts to the biggest branch", GH_ParamAccess.item);
-            pManager[2].Optional = true;
             pManager.AddIntegerParameter("Node Number", "NNum", "The number of the node, by default 0", GH_ParamAccess.item);
-            pManager[3].Optional = true;
+            pManager[2].Optional = true;
         }
 
         /// <summary>
@@ -66,22 +62,18 @@ namespace PrecisionNode
             List<Curve> pipeLines = new List<Curve>();
             List<double> pipeRadii = new List<double>();
             double DOCABSOLUTETOLERANCE = Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance;
-            double bulgeSizeMultiplier = 1.0;
             int nodeNum = 0;
-            
 
             bool successPipeLines = DA.GetDataList(0, pipeLines);
             bool successPipeRadii = DA.GetDataList(1, pipeRadii);
-            bool successBulgeSizeMultiplier = DA.GetData(2, ref bulgeSizeMultiplier);
-            bool successNodeNum = DA.GetData(3, ref nodeNum);
-            if (!successBulgeSizeMultiplier) bulgeSizeMultiplier = 1.0;
+            bool successNodeNum = DA.GetData(2, ref nodeNum);
             if (!successNodeNum) nodeNum = 0;
 
             Node node = null;
 
             if (successPipeLines & successPipeRadii)
             {
-                double nodeRadius = pipeRadii.OrderByDescending(x => x).ToList()[0] * bulgeSizeMultiplier;
+                double nodeRadius = pipeRadii.OrderByDescending(x => x).ToList()[0];
                 double stichDistance = nodeRadius / 2;
 
                 //Sort out the topological relationship of the pipe centre lines
@@ -92,26 +84,19 @@ namespace PrecisionNode
                 node = new Node(nodeNum);
 
                 bool openIntersectionExists = false;
-                Point3d branchWithStichPotential = new Point3d();
+                Point3d branchWithStichPotencial = new Point3d();
                 List<Point3d> loseEnds;
                 List<Vector3d> branchVectors;
                 bool stichNeeded = false;
-                Point3d pointToSwap11 = new Point3d();
-                Point3d pointToSwap12 = new Point3d();
-                Point3d stichPosition1 = new Point3d();
-
-                bool stichNeeded2 = false;
-                Point3d pointToSwap21 = new Point3d();
-                Point3d pointToSwap22 = new Point3d();
-                Point3d stichPosition2 = new Point3d();
-                Point3d branchWithStichPotential2 = new Point3d();
-
+                Point3d pointToSwap1 = new Point3d();
+                Point3d pointToSwap2 = new Point3d();
+                Point3d stichPosition = new Point3d();
                 Point3d averagePosition = new Point3d();
 
                 //1. Find all the intersection curves and examine if the intersection is closed
                 //and and putting all the lose ends into a dictionary
                 Dictionary<Point3d, Curve> intersectionDict = new Dictionary<Point3d, Curve>();
-                Dictionary<Point3d, List<Point3d>> looseEndsDict = new Dictionary<Point3d, List<Point3d>>();
+                Dictionary<Point3d, List<Point3d>> loseEndsDict = new Dictionary<Point3d, List<Point3d>>();
 
                 foreach (Point3d branchStartPoint in branchstartPoints)
                 {
@@ -124,7 +109,7 @@ namespace PrecisionNode
                             openIntersectionExists = true;
                             Point3d loseEndStart = intersection.PointAtStart;
                             Point3d loseEndEnd = intersection.PointAtEnd;
-                            looseEndsDict.Add(branchStartPoint, new List<Point3d> { loseEndStart, loseEndEnd });
+                            loseEndsDict.Add(branchStartPoint, new List<Point3d> { loseEndStart, loseEndEnd });
                         }
                         intersectionDict.Add(branchStartPoint, intersection);
                     }
@@ -133,51 +118,28 @@ namespace PrecisionNode
                 if (openIntersectionExists)
                 {
                     //2. Construct the list of lose ends depending on if one stich needed
-                    branchWithStichPotential = looseEndsDict.OrderBy(x => x.Value[0].DistanceTo(x.Value[1])).First().Key;
+                    branchWithStichPotencial = loseEndsDict.OrderBy(x => x.Value[0].DistanceTo(x.Value[1])).First().Key;
                     loseEnds = new List<Point3d>();
                     branchVectors = new List<Vector3d>();
+                    pointToSwap1 = new Point3d();
+                    pointToSwap2 = new Point3d();
 
-                    if (looseEndsDict[branchWithStichPotential][0].DistanceTo(looseEndsDict[branchWithStichPotential][1]) < stichDistance)
+                    if (loseEndsDict[branchWithStichPotencial][0].DistanceTo(loseEndsDict[branchWithStichPotencial][1]) < stichDistance)
                     {
                         stichNeeded = true;
-                        pointToSwap11 = looseEndsDict[branchWithStichPotential][0];
-                        pointToSwap12 = looseEndsDict[branchWithStichPotential][1];
-                        stichPosition1 = (pointToSwap11 + pointToSwap12) / 2;
-                        loseEnds.Add(stichPosition1);
+                        pointToSwap1 = loseEndsDict[branchWithStichPotencial][0];
+                        pointToSwap2 = loseEndsDict[branchWithStichPotencial][1];
+                        stichPosition = (pointToSwap1 + pointToSwap2) / 2;
+                        loseEnds.Add(stichPosition);
 
-                        //A loop through the loose ends dictionary to check if there are another loose ends to stich
-                        if (stichNeeded)
+                        foreach (KeyValuePair<Point3d, List<Point3d>> kvp in loseEndsDict)
                         {
-                            foreach (KeyValuePair<Point3d, List<Point3d>> kvp in looseEndsDict)
-                            {
-                                //if the branch is not the same as the fist branch with the stich potential & none of the loose ends are the same as the loose ends to be stiched & the loose end are close enough to each other
-                                if (!kvp.Key.EpsilonEquals(branchWithStichPotential, DOCABSOLUTETOLERANCE) &&
-                                  !kvp.Value[0].EpsilonEquals(pointToSwap11, DOCABSOLUTETOLERANCE) && !kvp.Value[0].EpsilonEquals(pointToSwap12, DOCABSOLUTETOLERANCE) &&
-                                  !kvp.Value[1].EpsilonEquals(pointToSwap11, DOCABSOLUTETOLERANCE) && !kvp.Value[1].EpsilonEquals(pointToSwap12, DOCABSOLUTETOLERANCE) &&
-                                  kvp.Value[0].DistanceTo(kvp.Value[1]) < stichDistance)
-                                {
-                                    stichNeeded2 = true;
-                                    branchWithStichPotential2 = kvp.Key;
-                                    pointToSwap21 = kvp.Value[0];
-                                    pointToSwap22 = kvp.Value[1];
-                                    stichPosition2 = (pointToSwap21 + pointToSwap22) / 2;
-                                    loseEnds.Add(stichPosition2);
-
-                                    break;
-                                }
-                            }
-                        }
-
-                        foreach (KeyValuePair<Point3d, List<Point3d>> kvp in looseEndsDict)
-                        {
-                            if (!kvp.Key.EpsilonEquals(branchWithStichPotential, DOCABSOLUTETOLERANCE))
+                            if (!kvp.Key.EpsilonEquals(branchWithStichPotencial, DOCABSOLUTETOLERANCE))
                             {
                                 foreach (Point3d point in kvp.Value)
                                 {
-                                    if (!point.EpsilonEquals(pointToSwap11, DOCABSOLUTETOLERANCE)
-                                      && !point.EpsilonEquals(pointToSwap12, DOCABSOLUTETOLERANCE)
-                                      && !point.EpsilonEquals(pointToSwap21, DOCABSOLUTETOLERANCE)
-                                      && !point.EpsilonEquals(pointToSwap22, DOCABSOLUTETOLERANCE))
+                                    if (!point.EpsilonEquals(pointToSwap1, DOCABSOLUTETOLERANCE)
+                                      && !point.EpsilonEquals(pointToSwap2, DOCABSOLUTETOLERANCE))
                                     {
                                         loseEnds.Add(point);
                                     }
@@ -188,7 +150,7 @@ namespace PrecisionNode
                     }
                     else
                     {
-                        foreach (KeyValuePair<Point3d, List<Point3d>> kvp in looseEndsDict)
+                        foreach (KeyValuePair<Point3d, List<Point3d>> kvp in loseEndsDict)
                         {
                             loseEnds.AddRange(kvp.Value);
                             branchVectors.Add(centrePoint - kvp.Key);
@@ -217,7 +179,7 @@ namespace PrecisionNode
                       new Point3d[] { averagePosition },
                       -sumVector,
                       DOCABSOLUTETOLERANCE);
-                    if (averagePositions != null && averagePositions.Length>0) averagePosition = averagePositions[0];
+                    if (averagePositions != null) averagePosition = averagePositions[0];
 
                 }
                 //5. second loop constructs the nodes with the (bridged) intersection curves
@@ -244,25 +206,16 @@ namespace PrecisionNode
                         {
                             if (stichNeeded)
                             {
-                                List<Point3d> pointToBeSubstituted2 = null;
-                                List<Point3d> pointToBeSubstituted1 = new List<Point3d> { pointToSwap11, pointToSwap12 };
-
-                                if (stichNeeded2)
-                                {
-                                    pointToBeSubstituted2 = new List<Point3d> { pointToSwap21, pointToSwap22 };
-                                }
-
-                                if (kvp.Key.EpsilonEquals(branchWithStichPotential, DOCABSOLUTETOLERANCE) || kvp.Key.EpsilonEquals(branchWithStichPotential2, DOCABSOLUTETOLERANCE))
+                                List<Point3d> pointToBeSubtituded = new List<Point3d> { pointToSwap1, pointToSwap2 };
+                                if (kvp.Key.EpsilonEquals(branchWithStichPotencial, DOCABSOLUTETOLERANCE))
                                 {
                                     nodeBranch.InitialiseIntersectionCorners();
-                                    nodeBranch.SubtitudeIntersectionCorners(stichPosition1, pointToBeSubstituted1);
-                                    if (stichNeeded2) nodeBranch.SubtitudeIntersectionCorners(stichPosition2, pointToBeSubstituted2);
                                 }
                                 else
                                 {
-                                    nodeBranch.AddAveragePositionWithSubstitutes(averagePosition, stichPosition1, pointToBeSubstituted1, stichPosition2, pointToBeSubstituted2);
+                                    nodeBranch.AddAveragePosition(averagePosition);
                                 }
-
+                                nodeBranch.SubtitudeIntersectionCorners(stichPosition, pointToBeSubtituded);
                             }
                             else
                             {
@@ -272,6 +225,7 @@ namespace PrecisionNode
                     }
                     node.NodeBranches.Add(nodeBranch);
                 }
+
                 node.InitialiseNodeInfo();
                 DA.SetData(0, node);
             }
@@ -284,13 +238,13 @@ namespace PrecisionNode
         /// You can add image files to your project resources and access them like this:
         /// return Resources.IconForThisComponent;
         /// </summary>
-        protected override System.Drawing.Bitmap Icon => Properties.Resources.ConstructNodes;
+        protected override System.Drawing.Bitmap Icon => Properties.Resources.ConstructNodesLEGACY;
 
         /// <summary>
         /// Each component must have a unique Guid to identify it. 
         /// It is vital this Guid doesn't change otherwise old ghx files 
         /// that use the old ID will partially fail during loading.
         /// </summary>
-        public override Guid ComponentGuid => new Guid("F8F01403-C0C7-4985-BC2C-CC584C839DF1");
+        public override Guid ComponentGuid => new Guid("3D4C0A88-B15B-4E6F-9FF8-F108AD6F5EB8");
     }
 }

@@ -461,5 +461,18 @@ namespace PrecisionNode
 
             subD = unjoined[0];
         }
+        /// <summary>
+        /// Remap a value from one interval onto another interval.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="start1"></param>
+        /// <param name="end1"></param>
+        /// <param name="start2"></param>
+        /// <param name="end2"></param>
+        /// <returns></returns>
+        public static double Remap(double value, double start1, double end1, double start2, double end2)
+        {
+            return start2 + (end2 - start2) * ((value - start1) / (end1 - start1));
+        }
     }
 }

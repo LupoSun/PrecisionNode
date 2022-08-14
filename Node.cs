@@ -15,7 +15,7 @@ namespace PrecisionNode
         private Brep coreGeometry;
         private double coreWallThickness;
         private double coreThreadWallThickness;
-        private Brep coatingGeometry;
+        private Mesh coatingGeometryMesh;
         private List<Curve> sprayPath;
 
         //REDUNDENT
@@ -32,8 +32,9 @@ namespace PrecisionNode
 
         public List<NodeBranch> NodeBranches { get { return nodeBranches; } }
         public SubD NodeSimpleSubD { get { return nodeSimpleSubD; } }
-        public Brep CoreGeometry { get { return coreGeometry; } }
-        public SubD CoatingBaseSubD { get { return coatingBaseSubD; } }
+        public Brep CoreGeometry { get { return coreGeometry; }}
+        public SubD CoatingBaseSubD { get { return coatingBaseSubD; }}
+        public Mesh CoatingGeometryMesh { get { return coatingGeometryMesh; } set { coatingGeometryMesh = value; } }
         public int NodeNum { get { return nodeNum; } set { nodeNum = value; }}
         public double CoreThreadWallThickness { get { return coreThreadWallThickness; } set { coreThreadWallThickness = value; } }
         public double CoreWallThickness { get { return coreWallThickness; } set { coreWallThickness = value; } }
@@ -61,7 +62,7 @@ namespace PrecisionNode
             coreGeometry = null;
             coreWallThickness = double.NaN;
             coreThreadWallThickness = double.NaN;
-            coatingGeometry = null;
+            coatingGeometryMesh = null;
             this.nodeNum = nodeNum;
             sprayPath = new List<Curve>();
 
@@ -88,7 +89,7 @@ namespace PrecisionNode
             coreGeometry = null;
             coreWallThickness = double.NaN;
             coreThreadWallThickness = double.NaN;
-            coatingGeometry = null;
+            coatingGeometryMesh = null;
             this.nodeNum = nodeNum;
             sprayPath = new List<Curve>();
 

@@ -23,11 +23,11 @@ namespace PrecisionNode
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Nodes", "N", "The constructed Node objects", GH_ParamAccess.list);
-            pManager.AddNumberParameter("WallThickness", "WT", "The wall thickness of the core", GH_ParamAccess.item);
-            pManager.AddNumberParameter("ThreadWallThickness", "TWT", "The wall thickness at the areas of the threads",
+            pManager.AddGenericParameter("Node", "N", "The constructed Node objects", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Wall Thickness", "WT", "The wall thickness of the core", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Thread Wall Thickness", "TWT", "The wall thickness at the areas of the threads",
                 GH_ParamAccess.item);
-            pManager.AddNumberParameter("ThreadLength", "TL", "The length of the threads", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Thread Length", "TL", "The length of the threads", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -35,9 +35,10 @@ namespace PrecisionNode
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddBrepParameter("CoreGeometry", "CG", "The core geometry as Brep", GH_ParamAccess.list);
-            pManager.AddGenericParameter("ProcessedNodes", "PN", "The Node objects after being processed",
-                GH_ParamAccess.list);
+            pManager.AddGenericParameter("Processed Nodes", "PN", "The Node objects after being processed",
+                GH_ParamAccess.item);
+            pManager.AddBrepParameter("Core Geometry", "CG", "The core geometry as Brep", GH_ParamAccess.item);
+            
         }
 
         /// <summary>
@@ -46,31 +47,29 @@ namespace PrecisionNode
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<Node> nodes = new List<Node>();
-            double wallThickness = Double.NaN;
-            double threadWallThickness = Double.NaN;
-            double threadLength = Double.NaN;
+            Node node = null;
+            double wallThickness = double.NaN;
+            double threadWallThickness = double.NaN;
+            double threadLength = double.NaN;
 
-            bool success1 = DA.GetDataList("Nodes", nodes);
-            bool success2 = DA.GetData("WallThickness", ref wallThickness);
-            bool success3 = DA.GetData("ThreadWallThickness", ref threadWallThickness);
-            bool success4 = DA.GetData("ThreadLength", ref threadLength);
+            bool successNode = DA.GetData(0, ref node);
+            bool successWallThickness = DA.GetData(1, ref wallThickness);
+            bool successThreadWallThickness = DA.GetData(2, ref threadWallThickness);
+            bool successThreadLength = DA.GetData(3, ref threadLength);
 
-            List<Brep> coreGeometries = new List<Brep>();
-            if (success1 && success2 && success3 && success4)
+            Brep coreGeometry = null;
+            if (successNode && successWallThickness && successThreadWallThickness && successThreadLength)
             {
-                foreach (Node node in nodes)
-                {
-                    if (node.NodeSimpleSubD == null) node.CreateNodeSimpleSubD();
-                    node.CreateCoreGeometry(wallThickness, threadWallThickness, threadLength);
-                    coreGeometries.Add(node.CoreGeometry);
-                }
-            } else AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Failed to collect data");
+                if (node.NodeSimpleSubD == null) node.CreateNodeSimpleSubD();
+                node.CreateCoreGeometry(wallThickness, threadWallThickness, threadLength);
+                coreGeometry = node.CoreGeometry;
+   
+            }   else AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Failed to collect data");
         
             
 
-            bool success5 = DA.SetDataList("CoreGeometry", coreGeometries);
-            bool success6 = DA.SetDataList("ProcessedNodes", nodes);
+            bool success5 = DA.SetData(1, coreGeometry);
+            bool success6 = DA.SetData(0, node);
             if (!(success5 && success6)) AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Failed to output data");
         }
 

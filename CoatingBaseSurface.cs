@@ -25,7 +25,8 @@ namespace PrecisionNode
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Nodes", "N", "The Node objects to extract information from", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Packed Brep", "Packed", "If the Brep output is packed", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Packed Brep", "Packed", "If the Brep output is packed", GH_ParamAccess.item,true);
+            pManager[1].Optional = true;
         }
 
         /// <summary>
@@ -33,8 +34,9 @@ namespace PrecisionNode
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddSubDParameter("SubD", "S", "The base SubD suface for the spay process", GH_ParamAccess.item);
-            pManager.AddBrepParameter("Brep", "B", "The base Brep suface for the spay process", GH_ParamAccess.item);
+            pManager.AddSubDParameter("SubD", "S", "The base SubD surface for the spay process", GH_ParamAccess.item);
+            pManager.AddBrepParameter("Brep", "B", "The base Brep surface for the spay process", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Quad Mesh", "QM", "The base Quad Mesh surface for the spay process", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -45,11 +47,12 @@ namespace PrecisionNode
         {
             Node node = null;
             bool packed = true;
-            bool success1 = DA.GetData(0, ref node);
-            bool success2 = DA.GetData(1, ref packed);
+            bool successNode = DA.GetData(0, ref node);
+            bool successPacked = DA.GetData(1, ref packed);
 
             SubD CoatingBaseSubD = null;
             Brep CoatingBaseBrep = null;
+            Mesh CoatingBaseQuadMesh = null;
 
             if (node.CoreGeometry == null) AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, String.Format("Node {0} doesn't have a core geometry yet",
                 node.NodeNum));
@@ -59,10 +62,14 @@ namespace PrecisionNode
 
                 if (packed) CoatingBaseBrep = CoatingBaseSubD.ToBrep(SubDToBrepOptions.DefaultPacked);
                 else CoatingBaseBrep = CoatingBaseSubD.ToBrep(SubDToBrepOptions.Default);
+
+                CoatingBaseQuadMesh = Mesh.CreateFromSubD(node.CoatingBaseSubD, 4);
+                CoatingBaseQuadMesh = CoatingBaseQuadMesh.QuadRemesh(new QuadRemeshParameters());
             }
 
             DA.SetData(0, CoatingBaseSubD);
             DA.SetData(1, CoatingBaseBrep);
+            DA.SetData(2, CoatingBaseQuadMesh);
 
         }
 

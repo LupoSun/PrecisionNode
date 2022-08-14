@@ -23,8 +23,9 @@ namespace PrecisionNode
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Nodes", "N", "The constructed Node objects", GH_ParamAccess.list);
-            pManager.AddBooleanParameter("Packed Brep", "Packed", "If the Brep output is packed", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Node", "N", "The constructed Node objects", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Packed Brep", "Packed", "If the Brep output is packed", GH_ParamAccess.item,true);
+            pManager[1].Optional = true;
         }
 
         /// <summary>
@@ -32,8 +33,9 @@ namespace PrecisionNode
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddSubDParameter("SubD", "SubD", "SubD Surface", GH_ParamAccess.list);
-            pManager.AddBrepParameter("Brep", "Brep", "Brep Surface", GH_ParamAccess.list);
+            pManager.AddSubDParameter("SubD", "SubD", "SubD Surface", GH_ParamAccess.item);
+            pManager.AddBrepParameter("Brep", "Brep", "Brep Surface", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Quad Mesh", "QM", "The simple Quad Mesh surface for the spay process", GH_ParamAccess.item);
 
         }
 
@@ -43,30 +45,33 @@ namespace PrecisionNode
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            List<Node> nodes = new List<Node>();
+            Node node = null;
             bool packed = true;
-            bool success1 = DA.GetDataList(0, nodes);
-            bool success2 = DA.GetData(1, ref packed);
+            bool successNode = DA.GetData(0, ref node);
+            bool successPacked = DA.GetData(1, ref packed);
 
-            List<SubD> subDs = new List<SubD>();
-            List<Brep> Breps = new List<Brep>();
+            Mesh simpleSurfaceQuadMesh = null;
+            SubD subD = null;
+            Brep brep = null;
 
-            foreach(Node node in nodes)
-            {
+            
                 if (node.NodeSimpleSubD == null)
                 {
                     node.CreateNodeSimpleSubD();
                 }
 
-                SubD subD = node.NodeSimpleSubD;
-                subDs.Add(subD);
+                subD = node.NodeSimpleSubD;
 
-                if (packed) Breps.Add(subD.ToBrep(SubDToBrepOptions.DefaultPacked));
-                else Breps.Add(subD.ToBrep(SubDToBrepOptions.Default));
-            }
+                if (packed) brep = subD.ToBrep(SubDToBrepOptions.DefaultPacked);
+                else brep = subD.ToBrep(SubDToBrepOptions.Default);
 
-            DA.SetDataList(0, subDs);
-            DA.SetDataList(1, Breps);
+                simpleSurfaceQuadMesh = Mesh.CreateFromSubD(subD, 4);
+                simpleSurfaceQuadMesh = simpleSurfaceQuadMesh.QuadRemesh(new QuadRemeshParameters());
+            
+
+            DA.SetData(0, subD);
+            DA.SetData(1, brep);
+            DA.SetData(2, simpleSurfaceQuadMesh);
 
 
 

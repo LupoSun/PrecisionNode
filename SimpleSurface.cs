@@ -26,6 +26,8 @@ namespace PrecisionNode
             pManager.AddGenericParameter("Node", "N", "The constructed Node objects", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Packed Brep", "Packed", "If the Brep output is packed", GH_ParamAccess.item,true);
             pManager[1].Optional = true;
+            pManager.AddBooleanParameter("Commpute Quad Mesh", "CQM", "If compute the quad mesh representation of the surface", GH_ParamAccess.item, false);
+            pManager[2].Optional = true;
         }
 
         /// <summary>
@@ -47,8 +49,10 @@ namespace PrecisionNode
         {
             Node node = null;
             bool packed = true;
+            bool computeQuadMesh = false;
             bool successNode = DA.GetData(0, ref node);
             bool successPacked = DA.GetData(1, ref packed);
+            bool successComputeQuadMesh = DA.GetData(2, ref computeQuadMesh);
 
             Mesh simpleSurfaceQuadMesh = null;
             SubD subD = null;
@@ -65,8 +69,11 @@ namespace PrecisionNode
                 if (packed) brep = subD.ToBrep(SubDToBrepOptions.DefaultPacked);
                 else brep = subD.ToBrep(SubDToBrepOptions.Default);
 
+            if (computeQuadMesh)
+            {
                 simpleSurfaceQuadMesh = Mesh.CreateFromSubD(subD, 4);
                 simpleSurfaceQuadMesh = simpleSurfaceQuadMesh.QuadRemesh(new QuadRemeshParameters());
+            }
             
 
             DA.SetData(0, subD);

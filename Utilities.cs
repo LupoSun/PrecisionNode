@@ -75,7 +75,12 @@ namespace PrecisionNode
                 //add all cylinders into one list
                 foreach (Point3d point in startPoints)
                 {
-                    foreach (Brep brep in Brep.CreatePipe(new LineCurve(point, centrePoint),
+                    //Lengthen the branch line for cylinder intersection
+                    Vector3d moveVectorOther = point - centrePoint;
+                    moveVectorOther.Unitize();
+                    Point3d newPointOther = point + moveVectorOther * radius * 20;
+
+                    foreach (Brep brep in Brep.CreatePipe(new LineCurve(newPointOther, centrePoint),
                       radius, false,
                       PipeCapMode.None,
                       true,
@@ -88,8 +93,11 @@ namespace PrecisionNode
                 //join all the cylinder into one Brep using Boolean-Union operation
                 Brep joinedCylinders = Brep.CreateBooleanUnion(otherCylinders, RhinoDoc.ActiveDoc.ModelAbsoluteTolerance)[0];
 
-                //construct the branchCylinder
-                Brep branchCylinder = Brep.CreatePipe(new LineCurve(startPoint, centrePoint),
+                //construct the branch cylinder with lengthened branch curve
+                Vector3d moveVector = startPoint - centrePoint;
+                moveVector.Unitize();
+                Point3d newPoint = startPoint + moveVector * radius * 20;
+                Brep branchCylinder = Brep.CreatePipe(new LineCurve(newPoint, centrePoint),
                   radius,
                   false,
                   PipeCapMode.None,

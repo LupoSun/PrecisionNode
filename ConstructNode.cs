@@ -40,9 +40,9 @@ namespace PrecisionNode
                 GH_ParamAccess.list);
             pManager.AddNumberParameter("Bulge Size Multiplier",
                 "BSM",
-                "The multiplier for the bulge size, by default 1, which adapts to the biggest branch", GH_ParamAccess.item);
+                "The multiplier for the bulge size, by default 1, which adapts to the biggest branch", GH_ParamAccess.item,1.0);
             pManager[2].Optional = true;
-            pManager.AddIntegerParameter("Node Number", "NNum", "The number of the node, by default 0", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Node Number", "NNum", "The number of the node, by default 0", GH_ParamAccess.item,1);
             pManager[3].Optional = true;
         }
 
